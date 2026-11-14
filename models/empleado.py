@@ -1,5 +1,5 @@
-
 from models.usuario import Usuario
+from datetime import datetime
 
 class Empleado(Usuario):
     def __init__(self, nombre, correo, direccion, telefono, fecha_inicio, salario, departamento=None, id_empleado=None):
@@ -27,8 +27,12 @@ class Empleado(Usuario):
 
     @telefono.setter
     def telefono(self, valor):
-        if not valor.strip():
-            raise ValueError("Debe ingresar un teléfono")
+        if not valor.isdigit():
+            raise ValueError("El teléfono debe contener solo números")
+
+        if len(valor) != 9:
+            raise ValueError("El teléfono debe tener 9 dígitos")
+
         self._telefono = valor
 
     @property
@@ -37,8 +41,11 @@ class Empleado(Usuario):
 
     @fecha_inicio.setter
     def fecha_inicio(self, valor):
-        if not valor.strip():
-            raise ValueError("Debe ingresar una fecha")
+        try:
+            datetime.strptime(valor, "%Y-%m-%d")
+        except (ValueError, TypeError):
+            raise ValueError("La fecha debe tener el formato AAAA-MM-DD y ser válida")
+
         self._fecha_inicio = valor
 
     @property

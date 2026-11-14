@@ -15,13 +15,26 @@ class DepartamentoView:
     @staticmethod
     def formulario_nuevo():
         nombre = input("Nombre: ")
-        gerente = input("Gerente: ")
+        gerente = leer_numero("ID del gerente (0 si no tiene): ")
+
+        if gerente == 0:
+         gerente = None
+
         return {"nombre": nombre, "gerente": gerente}
 
     @staticmethod
     def formulario_editar(obj):
         nombre = input(f"Nombre ({obj.nombre}): ") or obj.nombre
-        gerente = input(f"Gerente ({obj.gerente}): ") or obj.gerente
+        gerente = input(f"ID del gerente ({obj.gerente or 'Sin asignar'}): ")
+
+        if gerente == "":
+            gerente = obj.gerente
+        else:
+            gerente = int(gerente)
+
+            if gerente == 0:
+                gerente = None
+
         return {"nombre": nombre, "gerente": gerente}
 
     @staticmethod

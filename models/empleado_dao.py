@@ -1,5 +1,6 @@
 from config.database import Database
 from models.empleado import Empleado
+from models.departamento import Departamento
 from models.departamento_dao import DepartamentoDAO
 
 class EmpleadoDAO:
@@ -15,7 +16,8 @@ class EmpleadoDAO:
             empleado.id_empleado = cursor.lastrowid
             return True
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al crear empleado: {e}")
             return False
         finally:
             conn.close()
@@ -29,13 +31,49 @@ class EmpleadoDAO:
     def obtener_todos():
         conn = Database().get_connection()
         empleados = []
+
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM empleado")
+            cursor.execute("""
+                SELECT
+                    e.*,
+                    d.nombre AS nombre_departamento,
+                    d.id_gerente
+                FROM empleado e
+                LEFT JOIN departamento d
+                    ON e.id_departamento = d.id_departamento
+            """)
+
             for fila in cursor.fetchall():
-                empleados.append(EmpleadoDAO.convertir(fila))
+                departamento = None
+
+                if fila["nombre_departamento"] is not None:
+                    departamento = Departamento(
+                        fila["nombre_departamento"],
+                        fila["id_gerente"],
+                        fila["id_departamento"]
+                    )
+
+                empleado = Empleado(
+                    fila["nombre"],
+                    fila["correo"],
+                    fila["direccion"],
+                    fila["telefono"],
+                    fila["fecha_inicio"],
+                    fila["salario"],
+                    departamento,
+                    fila["id_empleado"]
+                )
+
+                empleados.append(empleado)
+
+        except Exception as e:
+            print(f"Error al obtener empleados: {e}")
+            return []
+
         finally:
             conn.close()
+
         return empleados
 
     @staticmethod
@@ -46,6 +84,9 @@ class EmpleadoDAO:
             cursor.execute("SELECT * FROM empleado WHERE id_empleado = ?", (id_empleado,))
             fila = cursor.fetchone()
             return EmpleadoDAO.convertir(fila) if fila else None
+        except Exception as e:
+            print(f"Error al buscar empleado: {e}")
+            return None
         finally:
             conn.close()
 
@@ -59,6 +100,10 @@ class EmpleadoDAO:
                 (empleado.nombre, empleado.correo, empleado.direccion, empleado.telefono, empleado.fecha_inicio, empleado.salario, id_depto, empleado.id_empleado))
             conn.commit()
             return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            print(f"Error al actualizar empleado: {e}")
+            return False
         finally:
             conn.close()
 
@@ -70,5 +115,9 @@ class EmpleadoDAO:
             cursor.execute("DELETE FROM empleado WHERE id_empleado = ?", (id_empleado,))
             conn.commit()
             return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            print(f"Error al eliminar empleado: {e}")
+            return False
         finally:
             conn.close()

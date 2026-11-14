@@ -8,5 +8,7 @@ class MainView:
         print("2.- Gestión de Departamentos")
         print("3.- Gestión de Proyectos")
         print("4.- Gestión de Registros de Tiempo")
+        print("5.- Gestión de Gerentes")
         print("0.- Salir")
         return leer_numero("Seleccione una opción: ")
+

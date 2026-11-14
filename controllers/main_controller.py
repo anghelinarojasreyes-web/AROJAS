@@ -3,6 +3,7 @@ from controllers.empleado_controller import EmpleadoController
 from controllers.departamento_controller import DepartamentoController
 from controllers.proyecto_controller import ProyectoController
 from controllers.registro_tiempo_controller import RegistroTiempoController
+from controllers.gerente_controller import GerenteController
 
 class MainController:
     def __init__(self):
@@ -11,6 +12,7 @@ class MainController:
         self.departamento_controller = DepartamentoController()
         self.proyecto_controller = ProyectoController()
         self.registro_tiempo_controller = RegistroTiempoController()
+        self.gerente_controller = GerenteController()
 
     def ejecutar(self):
         while True:
@@ -23,6 +25,8 @@ class MainController:
                 self.proyecto_controller.ejecutar()
             elif opcion == 4:
                 self.registro_tiempo_controller.ejecutar()
+            elif opcion == 5:
+                self.gerente_controller.ejecutar()
             elif opcion == 0:
                 print("Hasta luego")
                 break

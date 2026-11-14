@@ -7,7 +7,7 @@ class DepartamentoDAO:
         conn = Database().get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO departamento (nombre, gerente) VALUES (?, ?)", (departamento.nombre, departamento.gerente))
+            cursor.execute("INSERT INTO departamento (nombre, id_gerente) VALUES (?, ?)", (departamento.nombre, departamento.gerente))
             conn.commit()
             departamento.id_departamento = cursor.lastrowid
             return True
@@ -25,7 +25,10 @@ class DepartamentoDAO:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM departamento")
             for fila in cursor.fetchall():
-                departamentos.append(Departamento(fila['nombre'], fila['gerente'], fila['id_departamento']))
+                departamentos.append(Departamento(fila['nombre'], fila['id_gerente'], fila['id_departamento']))
+        except Exception as e:
+            print(f"Error al obtener departamentos: {e}")
+            return []
         finally:
             conn.close()
         return departamentos
@@ -38,7 +41,10 @@ class DepartamentoDAO:
             cursor.execute("SELECT * FROM departamento WHERE id_departamento = ?", (id_departamento,))
             fila = cursor.fetchone()
             if fila:
-                return Departamento(fila['nombre'], fila['gerente'], fila['id_departamento'])
+                return Departamento(fila['nombre'], fila['id_gerente'], fila['id_departamento'])
+            return None
+        except Exception as e:
+            print(f"Error al buscar departamento: {e}")
             return None
         finally:
             conn.close()
@@ -48,9 +54,13 @@ class DepartamentoDAO:
         conn = Database().get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("UPDATE departamento SET nombre = ?, gerente = ? WHERE id_departamento = ?", (departamento.nombre, departamento.gerente, departamento.id_departamento))
+            cursor.execute("UPDATE departamento SET nombre = ?, id_gerente = ? WHERE id_departamento = ?", (departamento.nombre, departamento.gerente, departamento.id_departamento))
             conn.commit()
             return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            print(f"Error al actualizar departamento: {e}")
+            return False
         finally:
             conn.close()
 

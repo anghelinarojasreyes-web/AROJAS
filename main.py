@@ -8,6 +8,4 @@ if __name__ == "__main__":
     print("Conexión a la base de datos exitosa")
     conn.close()
     MainController().ejecutar()
-
-
-
+    

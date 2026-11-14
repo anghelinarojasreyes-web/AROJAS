@@ -1,5 +1,8 @@
 from config.database import Database
 from models.registro_tiempo import RegistroTiempo
+from models.empleado import Empleado
+from models.proyecto import Proyecto
+from models.departamento_dao import DepartamentoDAO
 from models.empleado_dao import EmpleadoDAO
 from models.proyecto_dao import ProyectoDAO
 
@@ -21,6 +24,7 @@ class RegistroTiempoDAO:
             registro.id_registro = cursor.lastrowid
             return True
         except Exception as e:
+            conn.rollback()
             print(f"Error: {e}")
             return False
         finally:
@@ -30,6 +34,7 @@ class RegistroTiempoDAO:
     def convertir(fila):
         empleado = EmpleadoDAO.obtener_por_id(fila["id_empleado"])
         proyecto = ProyectoDAO.obtener_por_id(fila["id_proyecto"])
+
         return RegistroTiempo(
             fila["fecha"],
             fila["horas_trabajadas"],
@@ -43,15 +48,83 @@ class RegistroTiempoDAO:
     def obtener_todos():
         conn = Database().get_connection()
         registros = []
+
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM registro_tiempo")
+            cursor.execute("""
+                SELECT
+                    r.id_registro,
+                    r.fecha,
+                    r.horas_trabajadas,
+                    r.descripcion,
+                    e.id_empleado,
+                    e.nombre AS empleado_nombre,
+                    e.correo,
+                    e.direccion,
+                    e.telefono,
+                    e.fecha_inicio AS empleado_fecha_inicio,
+                    e.salario,
+                    e.id_departamento,
+                    d.nombre AS departamento_nombre,
+                    d.id_gerente,
+                    p.id_proyecto,
+                    p.nombre AS proyecto_nombre,
+                    p.descripcion AS proyecto_descripcion,
+                    p.fecha_inicio AS proyecto_fecha_inicio
+                FROM registro_tiempo r
+                JOIN empleado e ON r.id_empleado = e.id_empleado
+                LEFT JOIN departamento d
+                    ON e.id_departamento = d.id_departamento
+                JOIN proyecto p ON r.id_proyecto = p.id_proyecto
+            """)
+
             for fila in cursor.fetchall():
-                registros.append(RegistroTiempoDAO.convertir(fila))
+                departamento = None
+
+                if fila["id_departamento"] is not None:
+                    from models.departamento import Departamento
+                    departamento = Departamento(
+                        fila["departamento_nombre"],
+                        fila["id_gerente"],
+                        fila["id_departamento"]
+                    )
+
+                empleado = Empleado(
+                    fila["empleado_nombre"],
+                    fila["correo"],
+                    fila["direccion"],
+                    fila["telefono"],
+                    fila["empleado_fecha_inicio"],
+                    fila["salario"],
+                    departamento,
+                    fila["id_empleado"]
+                )
+
+                proyecto = Proyecto(
+                    fila["proyecto_nombre"],
+                    fila["proyecto_descripcion"],
+                    fila["proyecto_fecha_inicio"],
+                    fila["id_proyecto"]
+                )
+
+                registro = RegistroTiempo(
+                    fila["fecha"],
+                    fila["horas_trabajadas"],
+                    fila["descripcion"],
+                    empleado,
+                    proyecto,
+                    fila["id_registro"]
+                )
+
+                registros.append(registro)
+
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error al obtener registros: {e}")
+            return []
+
         finally:
             conn.close()
+
         return registros
 
     @staticmethod
@@ -88,6 +161,7 @@ class RegistroTiempoDAO:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
+            conn.rollback()
             print(f"Error: {e}")
             return False
         finally:
@@ -105,6 +179,7 @@ class RegistroTiempoDAO:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
+            conn.rollback()
             print(f"Error: {e}")
             return False
         finally:
