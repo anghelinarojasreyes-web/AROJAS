@@ -5,6 +5,7 @@ from controllers.proyecto_controller import ProyectoController
 from controllers.registro_tiempo_controller import RegistroTiempoController
 from controllers.gerente_controller import GerenteController
 from controllers.administrador_controller import AdministradorController
+from controllers.clima_controller import ClimaController
 from models.administrador_dao import AdministradorDAO
 from models.gerente_dao import GerenteDAO
 from models.departamento_dao import DepartamentoDAO
@@ -21,6 +22,7 @@ class MainController:
         self.registro_tiempo_controller = RegistroTiempoController()
         self.gerente_controller = GerenteController()
         self.administrador_controller = AdministradorController()
+        self.clima_controller = ClimaController()
 
     def mostrar_bienvenida(self, usuario):
         print(f"\nBienvenido, {usuario.nombre}")
@@ -72,6 +74,7 @@ class MainController:
             print("4.- Gestión de Registros de Tiempo")
             print("5.- Gestión de Gerentes")
             print("6.- Gestión de Administradores")
+            print("7.- Consultar clima")
             print("0.- Cerrar sesión")
 
             try:
@@ -92,6 +95,8 @@ class MainController:
                 self.gerente_controller.ejecutar(administrador)
             elif opcion == 6:
                 self.administrador_controller.ejecutar(administrador)
+            elif opcion == 7:
+                self.clima_controller.consultar()
             elif opcion == 0:
                 print("Sesión cerrada")
                 break
@@ -108,6 +113,7 @@ class MainController:
             print("4.- Editar empleado")
             print("5.- Consultar proyectos")
             print("6.- Consultar registros de tiempo")
+            print("7.- Consultar clima")
             print("0.- Cerrar sesión")
 
             try:
@@ -190,6 +196,9 @@ class MainController:
                 if not encontrado:
                     print("No hay registros de tiempo")
 
+            elif opcion == 7:
+                self.clima_controller.consultar()
+
             elif opcion == 0:
                 print("Sesión cerrada")
                 break
@@ -208,6 +217,7 @@ class MainController:
             print("5.- Consultar proyectos")
             print("6.- Consultar registros de tiempo")
             print("7.- Registrar horas trabajadas")
+            print("8.- Consultar clima")
             print("0.- Cerrar sesión")
 
             try:
@@ -288,6 +298,9 @@ class MainController:
 
             elif opcion == 7:
                 self.registro_tiempo_controller.registrar_horas(empleado)
+
+            elif opcion == 8:
+                self.clima_controller.consultar()
 
             elif opcion == 0:
                 print("Sesión cerrada")
