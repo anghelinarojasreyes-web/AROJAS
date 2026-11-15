@@ -3,21 +3,19 @@ from models.empleado_dao import EmpleadoDAO
 from models.departamento_dao import DepartamentoDAO
 from views.empleado_view import EmpleadoView
 
-
 class EmpleadoController:
     def __init__(self):
         self.view = EmpleadoView()
 
-    def ejecutar(self):
+    def ejecutar(self, administrador):
         while True:
             opcion = self.view.mostrar_menu()
-
             if opcion == 1:
-                self.agregar()
+                self.agregar(administrador)
             elif opcion == 2:
                 self.editar()
             elif opcion == 3:
-                self.eliminar()
+                self.eliminar(administrador)
             elif opcion == 4:
                 self.imprimir_uno()
             elif opcion == 5:
@@ -27,29 +25,24 @@ class EmpleadoController:
             else:
                 self.view.mostrar_mensaje("Opción no válida")
 
-    def pedir_id(self):
+    def pedir_id(self, gerente=None):
         while True:
             try:
-                id_empleado = int(
-                    input("ID del empleado (0 para cancelar): ")
-                )
-
+                id_empleado = int(input("ID del empleado (0 para cancelar): "))
                 if id_empleado == 0:
                     print("Operación cancelada")
                     return None
-
                 if id_empleado < 0:
                     print("Error: El ID debe ser positivo")
                     continue
-
                 empleado = EmpleadoDAO.obtener_por_id(id_empleado)
-
                 if empleado is None:
                     print("Error: El empleado no existe")
                     continue
-
+                if gerente and not gerente.puede_editar_empleado(empleado):
+                    print("No tiene permiso para editar este empleado")
+                    return None
                 return id_empleado
-
             except ValueError:
                 print("Error: Debe ingresar un número válido")
 
@@ -57,106 +50,82 @@ class EmpleadoController:
         while True:
             if id_departamento == 0:
                 return None
+            if id_departamento > 0:
+                departamento = DepartamentoDAO.obtener_por_id(id_departamento)
+                if departamento is not None:
+                    return departamento
+                print("Error: El departamento no existe")
+            else:
+                print("Error: El ID debe ser positivo")
+            texto = input("ID departamento (0 sin departamento, C cancelar): ").strip()
+            if texto.upper() == "C":
+                print("Operación cancelada")
+                return False
+            try:
+                id_departamento = int(texto)
+            except ValueError:
+                print("Error: Debe ingresar un número válido")
+                id_departamento = -1
 
-            departamento = DepartamentoDAO.obtener_por_id(id_departamento)
-
-            if departamento is not None:
-                return departamento
-
-            print("Error: El departamento no existe")
-
-            while True:
-                texto = input(
-                    "ID departamento (0 sin departamento, C para cancelar): "
-                ).strip()
-
-                if texto.lower() == "c":
-                    print("Operación cancelada")
-                    return False
-
-                try:
-                    id_departamento = int(texto)
-
-                    if id_departamento < 0:
-                        print("Error: El ID debe ser positivo")
-                        continue
-
-                    break
-
-                except ValueError:
-                    print("Error: Debe ingresar un número válido")
-
-    def agregar(self):
+    def agregar(self, administrador):
         try:
             datos = self.view.formulario_nuevo()
-
-            departamento = self.pedir_departamento(
-                datos["id_departamento"]
-            )
-
+            if datos is None:
+                return
+            departamento = self.pedir_departamento(datos["id_departamento"])
             if departamento is False:
                 return
-
             obj = Empleado(
-                datos["nombre"],
-                datos["correo"],
-                datos["direccion"],
-                datos["telefono"],
-                datos["fecha_inicio"],
-                datos["salario"],
-                departamento
+                datos["nombre"], datos["correo"], datos["direccion"],
+                datos["telefono"], datos["fecha_inicio"], datos["salario"],
+                departamento, contrasena=datos["contrasena"]
             )
-
-            if EmpleadoDAO.crear(obj):
+            if administrador.registrar_empleado(obj):
                 self.view.mostrar_mensaje("Agregado correctamente")
             else:
                 self.view.mostrar_mensaje("No se pudo agregar")
-
         except (ValueError, TypeError) as e:
             self.view.mostrar_mensaje(f"Error: {e}")
 
-    def editar(self):
-        id_empleado = self.pedir_id()
-
+    def editar(self, gerente=None):
+        id_empleado = self.pedir_id(gerente)
         if id_empleado is None:
             return
-
         obj = EmpleadoDAO.obtener_por_id(id_empleado)
-
+        if obj is None:
+            self.view.mostrar_mensaje("El empleado no existe")
+            return
         try:
-            datos = self.view.formulario_editar(obj)
-
-            departamento = self.pedir_departamento(
-                datos["id_departamento"]
-            )
-
-            if departamento is False:
+            datos = self.view.formulario_editar(obj, gerente)
+            if datos is None:
                 return
-
-            obj.nombre = datos["nombre"]
-            obj.correo = datos["correo"]
-            obj.direccion = datos["direccion"]
-            obj.telefono = datos["telefono"]
-            obj.fecha_inicio = datos["fecha_inicio"]
-            obj.salario = datos["salario"]
-            obj.departamento = departamento
-
-            if EmpleadoDAO.actualizar(obj):
+            if gerente:
+                if not gerente.puede_editar_empleado(obj):
+                    self.view.mostrar_mensaje("No tiene permiso para editar este empleado")
+                    return
+                departamento = obj.departamento
+            else:
+                departamento = self.pedir_departamento(datos["id_departamento"])
+                if departamento is False:
+                    return
+            empleado_actualizado = Empleado(
+                datos["nombre"], datos["correo"], datos["direccion"],
+                datos["telefono"], datos["fecha_inicio"], datos["salario"],
+                departamento, id_empleado, None
+            )
+            if EmpleadoDAO.actualizar(empleado_actualizado):
                 self.view.mostrar_mensaje("Actualizado correctamente")
             else:
                 self.view.mostrar_mensaje("No se pudo actualizar")
-
         except (ValueError, TypeError) as e:
             self.view.mostrar_mensaje(f"Error: {e}")
 
-    def eliminar(self):
+    def eliminar(self, administrador):
         id_empleado = self.pedir_id()
-
         if id_empleado is None:
             return
-
         if self.view.confirmar_eliminacion():
-            if EmpleadoDAO.eliminar(id_empleado):
+            if administrador.eliminar_empleado(id_empleado):
                 self.view.mostrar_mensaje("Eliminado correctamente")
             else:
                 self.view.mostrar_mensaje("No se pudo eliminar")
@@ -165,12 +134,10 @@ class EmpleadoController:
 
     def imprimir_uno(self):
         id_empleado = self.pedir_id()
-
-        if id_empleado is None:
-            return
-
-        obj = EmpleadoDAO.obtener_por_id(id_empleado)
-        self.view.mostrar_objeto(obj)
+        if id_empleado is not None:
+            empleado = EmpleadoDAO.obtener_por_id(id_empleado)
+            if empleado is not None:
+                self.view.mostrar_objeto(empleado)
 
     def imprimir_todos(self):
         self.view.mostrar_lista(EmpleadoDAO.obtener_todos())

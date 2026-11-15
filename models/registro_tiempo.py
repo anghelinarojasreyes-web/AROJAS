@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 
 class RegistroTiempo:
     def __init__(self, fecha, horas_trabajadas, descripcion, empleado, proyecto, id_registro=None):
@@ -10,6 +11,16 @@ class RegistroTiempo:
         self.proyecto = proyecto
 
     @property
+    def id_registro(self):
+        return self._id_registro
+
+    @id_registro.setter
+    def id_registro(self, valor):
+        if valor is not None and (not isinstance(valor, int) or valor <= 0):
+            raise ValueError("ID de registro inválido")
+        self._id_registro = valor
+
+    @property
     def fecha(self):
         return self._fecha
 
@@ -17,8 +28,8 @@ class RegistroTiempo:
     def fecha(self, valor):
         try:
             datetime.strptime(valor, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError("La fecha debe tener el formato AAAA-MM-DD")
+        except (ValueError, TypeError):
+            raise ValueError("La fecha debe tener el formato AAAA-MM-DD y ser válida")
         self._fecha = valor
 
     @property
@@ -27,9 +38,13 @@ class RegistroTiempo:
 
     @horas_trabajadas.setter
     def horas_trabajadas(self, valor):
-        if valor <= 0:
+        try:
+            horas = float(valor)
+        except (ValueError, TypeError):
+            raise ValueError("Las horas deben ser un número")
+        if not math.isfinite(horas) or horas <= 0:
             raise ValueError("Las horas deben ser mayores a 0")
-        self._horas_trabajadas = valor
+        self._horas_trabajadas = horas
 
     @property
     def descripcion(self):
@@ -37,9 +52,9 @@ class RegistroTiempo:
 
     @descripcion.setter
     def descripcion(self, valor):
-        if not valor.strip():
+        if not isinstance(valor, str) or not valor.strip():
             raise ValueError("Debe ingresar una descripción")
-        self._descripcion = valor
+        self._descripcion = valor.strip()
 
     @property
     def empleado(self):

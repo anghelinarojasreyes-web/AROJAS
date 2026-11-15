@@ -15,7 +15,8 @@ class ProyectoDAO:
             proyecto.id_proyecto = cursor.lastrowid
             return True
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al crear proyecto: {e}")
             return False
         finally:
             conn.close()
@@ -32,17 +33,15 @@ class ProyectoDAO:
     @staticmethod
     def obtener_todos():
         conn = Database().get_connection()
-        proyectos = []
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM proyecto")
-            for fila in cursor.fetchall():
-                proyectos.append(ProyectoDAO.convertir(fila))
+            return [ProyectoDAO.convertir(fila) for fila in cursor.fetchall()]
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error al obtener proyectos: {e}")
+            return []
         finally:
             conn.close()
-        return proyectos
 
     @staticmethod
     def obtener_por_id(id_proyecto):
@@ -56,7 +55,7 @@ class ProyectoDAO:
             fila = cursor.fetchone()
             return ProyectoDAO.convertir(fila) if fila else None
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error al buscar proyecto: {e}")
             return None
         finally:
             conn.close()
@@ -68,13 +67,13 @@ class ProyectoDAO:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE proyecto SET nombre=?, descripcion=?, fecha_inicio=? WHERE id_proyecto=?",
-                (proyecto.nombre, proyecto.descripcion,
-                 proyecto.fecha_inicio, proyecto.id_proyecto)
+                (proyecto.nombre, proyecto.descripcion, proyecto.fecha_inicio, proyecto.id_proyecto)
             )
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al actualizar proyecto: {e}")
             return False
         finally:
             conn.close()
@@ -91,10 +90,12 @@ class ProyectoDAO:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al eliminar proyecto: {e}")
             return False
         finally:
             conn.close()
+
     @staticmethod
     def asignar_empleado(id_empleado, id_proyecto):
         conn = Database().get_connection()
@@ -107,23 +108,26 @@ class ProyectoDAO:
             conn.commit()
             return True
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al asignar empleado al proyecto: {e}")
             return False
         finally:
             conn.close()
+
     @staticmethod
     def quitar_empleado(id_empleado, id_proyecto):
         conn = Database().get_connection()
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "DELETE FROM empleado_proyecto WHERE id_empleado = ? AND id_proyecto = ?",
+                "DELETE FROM empleado_proyecto WHERE id_empleado=? AND id_proyecto=?",
                 (id_empleado, id_proyecto)
             )
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error: {e}")
+            conn.rollback()
+            print(f"Error al quitar empleado del proyecto: {e}")
             return False
         finally:
             conn.close()
@@ -131,20 +135,37 @@ class ProyectoDAO:
     @staticmethod
     def ver_empleados(id_proyecto):
         conn = Database().get_connection()
-        empleados = []
         try:
             cursor = conn.cursor()
-            cursor.execute(
-                """SELECT empleado.id_empleado, empleado.nombre
-                FROM empleado
-                INNER JOIN empleado_proyecto
-                ON empleado.id_empleado = empleado_proyecto.id_empleado
-                WHERE empleado_proyecto.id_proyecto = ?""",
-                (id_proyecto,)
-            )
-            empleados = cursor.fetchall()
+            cursor.execute("""
+                SELECT e.id_empleado, e.nombre
+                FROM empleado e
+                INNER JOIN empleado_proyecto ep
+                ON e.id_empleado = ep.id_empleado
+                WHERE ep.id_proyecto = ?
+            """, (id_proyecto,))
+            return cursor.fetchall()
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error al consultar empleados del proyecto: {e}")
+            return []
         finally:
             conn.close()
-        return empleados
+
+    @staticmethod
+    def obtener_por_empleado(id_empleado):
+        conn = Database().get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT p.*
+                FROM proyecto p
+                INNER JOIN empleado_proyecto ep
+                ON p.id_proyecto = ep.id_proyecto
+                WHERE ep.id_empleado = ?
+            """, (id_empleado,))
+            return [ProyectoDAO.convertir(fila) for fila in cursor.fetchall()]
+        except Exception as e:
+            print(f"Error al consultar proyectos del empleado: {e}")
+            return []
+        finally:
+            conn.close()

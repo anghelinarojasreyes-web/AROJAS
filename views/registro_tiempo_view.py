@@ -1,9 +1,7 @@
-
 from views.utils import leer_numero, confirmar
 from datetime import datetime
 from models.empleado_dao import EmpleadoDAO
 from models.proyecto_dao import ProyectoDAO
-
 
 class RegistroTiempoView:
     @staticmethod
@@ -18,119 +16,82 @@ class RegistroTiempoView:
         return leer_numero("Seleccione una opción: ")
 
     @staticmethod
+    def leer_texto(mensaje, actual=None):
+        while True:
+            texto = input(mensaje).strip()
+            if texto.upper() == "C":
+                print("Operación cancelada")
+                return None
+            if not texto and actual is not None:
+                return actual
+            if texto:
+                return texto
+            print("Error: Campo obligatorio")
+
+    @staticmethod
     def leer_fecha(mensaje, actual=None):
         while True:
-            fecha = input(mensaje).strip()
-
-            if fecha == "0":
+            fecha = RegistroTiempoView.leer_texto(mensaje, actual)
+            if fecha is None:
                 return None
-
-            if fecha == "" and actual is not None:
-                return actual
-
             try:
                 datetime.strptime(fecha, "%Y-%m-%d")
                 return fecha
             except ValueError:
-                print("Error: Ingrese una fecha válida (AAAA-MM-DD)")
+                print("Error: Fecha inválida (AAAA-MM-DD)")
 
     @staticmethod
     def leer_horas(mensaje, actual=None):
         while True:
-            texto = input(mensaje).strip()
-
-            if texto == "0":
+            texto = RegistroTiempoView.leer_texto(mensaje, actual)
+            if texto is None:
                 return None
-
-            if texto == "" and actual is not None:
-                return actual
-
             try:
                 horas = float(texto)
-
                 if horas > 0:
                     return horas
-
                 print("Error: Las horas deben ser mayores a 0")
-
-            except ValueError:
+            except (ValueError, TypeError):
                 print("Error: Ingrese un número válido")
-
-    @staticmethod
-    def leer_texto(mensaje, actual=None):
-        while True:
-            texto = input(mensaje).strip()
-
-            if texto == "0":
-                return None
-
-            if texto == "" and actual is not None:
-                return actual
-
-            if texto:
-                return texto
-
-            print("Error: Este campo no puede estar vacío")
 
     @staticmethod
     def leer_id(mensaje, buscar, actual=None):
         while True:
-            texto = input(mensaje).strip()
-
-            if texto == "0":
+            texto = RegistroTiempoView.leer_texto(mensaje, actual)
+            if texto is None:
                 return None
-
-            if texto == "" and actual is not None:
-                return actual
-
             try:
-                id_obj = int(texto)
-
-                if id_obj < 0:
-                    print("Error: El ID debe ser positivo")
-                    continue
-
-                if buscar(id_obj) is None:
-                    print("Error: El registro no existe")
-                    continue
-
-                return id_obj
-
-            except ValueError:
-                print("Error: Ingrese un ID numérico válido")
+                numero = int(texto)
+                if numero > 0 and buscar(numero) is not None:
+                    return numero
+                print("Error: El registro no existe")
+            except (ValueError, TypeError):
+                print("Error: Ingrese un ID válido")
 
     @staticmethod
     def formulario_nuevo():
-        print("\nEscriba 0 para cancelar")
+        print("\nEscriba C para cancelar")
 
-        fecha = RegistroTiempoView.leer_fecha(
-            "Fecha (AAAA-MM-DD): "
-        )
+        fecha = RegistroTiempoView.leer_fecha("Fecha (AAAA-MM-DD): ")
         if fecha is None:
             return None
 
-        horas = RegistroTiempoView.leer_horas(
-            "Horas trabajadas: "
-        )
+        horas = RegistroTiempoView.leer_horas("Horas trabajadas: ")
         if horas is None:
             return None
 
-        descripcion = RegistroTiempoView.leer_texto(
-            "Descripción: "
-        )
+        descripcion = RegistroTiempoView.leer_texto("Descripción: ")
         if descripcion is None:
             return None
 
         id_empleado = RegistroTiempoView.leer_id(
-            "ID del empleado: ",
-            EmpleadoDAO.obtener_por_id
+            "ID del empleado: ", EmpleadoDAO.obtener_por_id
         )
         if id_empleado is None:
             return None
 
         id_proyecto = RegistroTiempoView.leer_id(
-            "ID del proyecto: ",
-            ProyectoDAO.obtener_por_id
+            "ID del proyecto: ", ProyectoDAO.obtener_por_id
         )
         if id_proyecto is None:
             return None
@@ -145,8 +106,7 @@ class RegistroTiempoView:
 
     @staticmethod
     def formulario_editar(obj):
-        print("\nPresione Enter para mantener el dato actual")
-        print("Escriba 0 para cancelar")
+        print("\nEnter para mantener, C para cancelar")
 
         fecha = RegistroTiempoView.leer_fecha(
             f"Fecha ({obj.fecha}): ", obj.fecha
@@ -155,15 +115,13 @@ class RegistroTiempoView:
             return None
 
         horas = RegistroTiempoView.leer_horas(
-            f"Horas ({obj.horas_trabajadas}): ",
-            obj.horas_trabajadas
+            f"Horas ({obj.horas_trabajadas}): ", obj.horas_trabajadas
         )
         if horas is None:
             return None
 
         descripcion = RegistroTiempoView.leer_texto(
-            f"Descripción ({obj.descripcion}): ",
-            obj.descripcion
+            f"Descripción ({obj.descripcion}): ", obj.descripcion
         )
         if descripcion is None:
             return None

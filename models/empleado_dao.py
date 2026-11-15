@@ -1,7 +1,6 @@
 from config.database import Database
 from models.empleado import Empleado
 from models.departamento import Departamento
-from models.departamento_dao import DepartamentoDAO
 
 class EmpleadoDAO:
     @staticmethod
@@ -10,8 +9,13 @@ class EmpleadoDAO:
         try:
             cursor = conn.cursor()
             id_depto = empleado.departamento.id_departamento if empleado.departamento else None
-            cursor.execute("""INSERT INTO empleado (nombre, correo, direccion, telefono, fecha_inicio, salario, id_departamento)
-                VALUES (?, ?, ?, ?, ?, ?, ?)""", (empleado.nombre, empleado.correo, empleado.direccion, empleado.telefono, empleado.fecha_inicio, empleado.salario, id_depto))
+            cursor.execute("""
+                INSERT INTO empleado
+                (nombre, correo, direccion, telefono, fecha_inicio, salario, id_departamento, contrasena)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (empleado.nombre, empleado.correo, empleado.direccion,
+                  empleado.telefono, empleado.fecha_inicio, empleado.salario,
+                  id_depto, empleado.contrasena))
             conn.commit()
             empleado.id_empleado = cursor.lastrowid
             return True
@@ -24,64 +28,76 @@ class EmpleadoDAO:
 
     @staticmethod
     def convertir(fila):
-        departamento = DepartamentoDAO.obtener_por_id(fila['id_departamento']) if fila['id_departamento'] else None
-        return Empleado(fila['nombre'], fila['correo'], fila['direccion'], fila['telefono'], fila['fecha_inicio'], fila['salario'], departamento, fila['id_empleado'])
+        departamento = None
+        if fila["nombre_departamento"] is not None:
+            departamento = Departamento(
+                fila["nombre_departamento"],
+                fila["id_gerente"],
+                fila["id_departamento"]
+            )
+        empleado = Empleado(
+            fila["nombre"],
+            fila["correo"],
+            fila["direccion"],
+            fila["telefono"],
+            fila["fecha_inicio"],
+            fila["salario"],
+            departamento,
+            fila["id_empleado"]
+        )
+        empleado._contrasena = fila["contrasena"]
+        return empleado
 
     @staticmethod
     def obtener_todos():
         conn = Database().get_connection()
         empleados = []
-
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT
-                    e.*,
-                    d.nombre AS nombre_departamento,
-                    d.id_gerente
+                SELECT e.*, d.nombre AS nombre_departamento, d.id_gerente
                 FROM empleado e
-                LEFT JOIN departamento d
-                    ON e.id_departamento = d.id_departamento
+                LEFT JOIN departamento d ON e.id_departamento = d.id_departamento
             """)
-
             for fila in cursor.fetchall():
-                departamento = None
-
-                if fila["nombre_departamento"] is not None:
-                    departamento = Departamento(
-                        fila["nombre_departamento"],
-                        fila["id_gerente"],
-                        fila["id_departamento"]
-                    )
-
-                empleado = Empleado(
-                    fila["nombre"],
-                    fila["correo"],
-                    fila["direccion"],
-                    fila["telefono"],
-                    fila["fecha_inicio"],
-                    fila["salario"],
-                    departamento,
-                    fila["id_empleado"]
-                )
-
-                empleados.append(empleado)
-
+                empleados.append(EmpleadoDAO.convertir(fila))
+            return empleados
         except Exception as e:
             print(f"Error al obtener empleados: {e}")
             return []
-
         finally:
             conn.close()
-
-        return empleados
 
     @staticmethod
     def obtener_por_id(id_empleado):
         conn = Database().get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM empleado WHERE id_empleado = ?", (id_empleado,))
+            cursor.execute("""
+                SELECT e.*, d.nombre AS nombre_departamento, d.id_gerente
+                FROM empleado e
+                LEFT JOIN departamento d ON e.id_departamento = d.id_departamento
+                WHERE e.id_empleado = ?
+            """, (id_empleado,))
+            fila = cursor.fetchone()
+            return EmpleadoDAO.convertir(fila) if fila else None
+        except Exception as e:
+            print(f"Error al buscar empleado: {e}")
+            return None
+        finally:
+            conn.close()
+
+    @staticmethod
+    def obtener_por_correo(correo):
+        conn = Database().get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT e.*, d.nombre AS nombre_departamento, d.id_gerente
+                FROM empleado e
+                LEFT JOIN departamento d ON e.id_departamento = d.id_departamento
+                WHERE e.correo = ?
+            """, (correo,))
             fila = cursor.fetchone()
             return EmpleadoDAO.convertir(fila) if fila else None
         except Exception as e:
@@ -96,8 +112,14 @@ class EmpleadoDAO:
         try:
             cursor = conn.cursor()
             id_depto = empleado.departamento.id_departamento if empleado.departamento else None
-            cursor.execute("""UPDATE empleado SET nombre=?, correo=?, direccion=?, telefono=?, fecha_inicio=?, salario=?, id_departamento=? WHERE id_empleado=?""",
-                (empleado.nombre, empleado.correo, empleado.direccion, empleado.telefono, empleado.fecha_inicio, empleado.salario, id_depto, empleado.id_empleado))
+            cursor.execute("""
+                UPDATE empleado
+                SET nombre=?, correo=?, direccion=?, telefono=?,
+                    fecha_inicio=?, salario=?, id_departamento=?
+                WHERE id_empleado=?
+            """, (empleado.nombre, empleado.correo, empleado.direccion,
+                  empleado.telefono, empleado.fecha_inicio, empleado.salario,
+                  id_depto, empleado.id_empleado))
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:

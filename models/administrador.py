@@ -10,6 +10,14 @@ class Administrador(Usuario):
     def mostrar_rol(self):
         return "Administrador"
 
+    def registrar_administrador(self, administrador):
+        from models.administrador_dao import AdministradorDAO
+        return AdministradorDAO.crear(administrador)
+
+    def eliminar_administrador(self, id_administrador):
+        from models.administrador_dao import AdministradorDAO
+        return AdministradorDAO.eliminar(id_administrador)
+
     def registrar_empleado(self, empleado):
         return EmpleadoDAO.crear(empleado)
 
@@ -27,3 +35,11 @@ class Administrador(Usuario):
 
     def eliminar_proyecto(self, id_proyecto):
         return ProyectoDAO.eliminar(id_proyecto)
+
+    def registrar_gerente(self, gerente):
+        from models.gerente_dao import GerenteDAO
+        return GerenteDAO.crear(gerente)
+
+    def eliminar_gerente(self, id_gerente):
+        from models.gerente_dao import GerenteDAO
+        return GerenteDAO.eliminar(id_gerente)
