@@ -14,9 +14,9 @@ class GerenteDAO:
             conn.commit()
             gerente.id_gerente = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al crear gerente: {e}")
+            print("Error al crear gerente")
             return False
         finally:
             conn.close()
@@ -42,8 +42,8 @@ class GerenteDAO:
             )
             fila = cursor.fetchone()
             return GerenteDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar gerente: {e}")
+        except Exception:
+            print("Error al buscar gerente")
             return None
         finally:
             conn.close()
@@ -59,8 +59,8 @@ class GerenteDAO:
             )
             fila = cursor.fetchone()
             return GerenteDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar gerente por correo: {e}")
+        except Exception:
+            print("Error al buscar gerente por correo")
             return None
         finally:
             conn.close()
@@ -72,8 +72,8 @@ class GerenteDAO:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM gerente")
             return [GerenteDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al obtener gerentes: {e}")
+        except Exception:
+            print("Error al obtener gerentes")
             return []
         finally:
             conn.close()
@@ -89,9 +89,9 @@ class GerenteDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar gerente: {e}")
+            print("Error al actualizar gerente")
             return False
         finally:
             conn.close()
@@ -107,9 +107,9 @@ class GerenteDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar gerente: {e}")
+            print("Error al eliminar gerente")
             return False
         finally:
             conn.close()

@@ -23,9 +23,9 @@ class AdministradorDAO:
             conn.commit()
             administrador.id_administrador = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al registrar administrador: {e}")
+            print("Error al registrar administrador")
             return False
         finally:
             conn.close()
@@ -41,8 +41,8 @@ class AdministradorDAO:
             )
             fila = cursor.fetchone()
             return AdministradorDAO.convertir_administrador(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar administrador: {e}")
+        except Exception:
+            print("Error al buscar administrador")
             return None
         finally:
             conn.close()
@@ -58,8 +58,8 @@ class AdministradorDAO:
             )
             fila = cursor.fetchone()
             return AdministradorDAO.convertir_administrador(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar administrador: {e}")
+        except Exception:
+            print("Error al buscar administrador")
             return None
         finally:
             conn.close()
@@ -71,8 +71,8 @@ class AdministradorDAO:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM administrador")
             return [AdministradorDAO.convertir_administrador(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al listar administradores: {e}")
+        except Exception:
+            print("Error al listar administradores")
             return []
         finally:
             conn.close()
@@ -88,9 +88,9 @@ class AdministradorDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar administrador: {e}")
+            print("Error al actualizar administrador")
             return False
         finally:
             conn.close()
@@ -110,9 +110,9 @@ class AdministradorDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar administrador: {e}")
+            print("Error al eliminar administrador")
             return False
         finally:
             conn.close()

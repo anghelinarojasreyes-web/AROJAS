@@ -1,3 +1,6 @@
+import os
+import time
+from getpass import getpass
 from views.main_view import MainView
 from controllers.empleado_controller import EmpleadoController
 from controllers.departamento_controller import DepartamentoController
@@ -23,10 +26,38 @@ class MainController:
         self.gerente_controller = GerenteController()
         self.administrador_controller = AdministradorController()
         self.clima_controller = ClimaController()
+        self.intentos_por_correo = {}
+        self.bloqueos_por_correo = {}
 
     def mostrar_bienvenida(self, usuario):
         print(f"\nBienvenido, {usuario.nombre}")
         print(f"Rol: {usuario.mostrar_rol()}")
+
+    def leer_contrasena(self):
+        if os.name != "nt":
+            return getpass("Contraseña (0 para volver): ")
+
+        import msvcrt
+        print("Contraseña (0 para volver): ", end="", flush=True)
+        caracteres = []
+
+        while True:
+            tecla = msvcrt.getwch()
+
+            if tecla == "\r":
+                print()
+                return "".join(caracteres)
+            elif tecla == "\x03":
+                raise KeyboardInterrupt
+            elif tecla == "\b":
+                if caracteres:
+                    caracteres.pop()
+                    print("\b \b", end="", flush=True)
+            elif tecla in ("\x00", "\xe0"):
+                msvcrt.getwch()
+            elif tecla.isprintable():
+                caracteres.append(tecla)
+                print("*", end="", flush=True)
 
     def iniciar_sesion(self):
         while True:
@@ -36,33 +67,55 @@ class MainController:
             if correo == "0":
                 return
 
-            contrasena = input("Contraseña (0 para volver): ")
+            administrador = AdministradorDAO.obtener_por_correo(correo)
+            gerente = GerenteDAO.obtener_por_correo(correo)
+            empleado = EmpleadoDAO.obtener_por_correo(correo)
+
+            correo_clave = correo.lower()
+            restante = self.bloqueos_por_correo.get(correo_clave, 0) - time.monotonic()
+
+            if restante > 0:
+                print(f"Cuenta bloqueada. Espere {int(restante) + 1} segundos")
+                continue
+
+            if correo_clave in self.bloqueos_por_correo:
+                del self.bloqueos_por_correo[correo_clave]
+                self.intentos_por_correo[correo_clave] = 0
+
+            contrasena = self.leer_contrasena()
 
             if contrasena == "0":
                 return
 
-            administrador = AdministradorDAO.obtener_por_correo(correo)
-
             if administrador and administrador.verificar_contrasena(contrasena):
+                self.intentos_por_correo.pop(correo_clave, None)
                 self.mostrar_bienvenida(administrador)
                 self.menu_administrador(administrador)
                 return
 
-            gerente = GerenteDAO.obtener_por_correo(correo)
-
             if gerente and gerente.verificar_contrasena(contrasena):
+                self.intentos_por_correo.pop(correo_clave, None)
                 self.mostrar_bienvenida(gerente)
                 self.menu_gerente(gerente)
                 return
 
-            empleado = EmpleadoDAO.obtener_por_correo(correo)
-
             if empleado and empleado.verificar_contrasena(contrasena):
+                self.intentos_por_correo.pop(correo_clave, None)
                 self.mostrar_bienvenida(empleado)
                 self.menu_empleado(empleado)
                 return
 
-            print("Correo o contraseña incorrectos")
+            intentos = self.intentos_por_correo.get(correo_clave, 0) + 1
+            self.intentos_por_correo[correo_clave] = intentos
+
+            print("Correo o contraseña incorrecta")
+
+            if intentos >= 3:
+                self.bloqueos_por_correo[correo_clave] = time.monotonic() + 30
+                print("Se alcanzó el máximo de 3 intentos")
+                print("Esta cuenta quedó bloqueada por 30 segundos")
+            else:
+                print(f"Intentos restantes: {3 - intentos}")
 
     def menu_administrador(self, administrador):
         while True:

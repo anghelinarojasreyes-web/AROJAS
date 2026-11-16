@@ -19,9 +19,9 @@ class EmpleadoDAO:
             conn.commit()
             empleado.id_empleado = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al crear empleado: {e}")
+            print("Error al crear empleado")
             return False
         finally:
             conn.close()
@@ -62,8 +62,8 @@ class EmpleadoDAO:
             for fila in cursor.fetchall():
                 empleados.append(EmpleadoDAO.convertir(fila))
             return empleados
-        except Exception as e:
-            print(f"Error al obtener empleados: {e}")
+        except Exception:
+            print("Error al obtener empleados")
             return []
         finally:
             conn.close()
@@ -81,8 +81,8 @@ class EmpleadoDAO:
             """, (id_empleado,))
             fila = cursor.fetchone()
             return EmpleadoDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar empleado: {e}")
+        except Exception:
+            print("Error al buscar empleado")
             return None
         finally:
             conn.close()
@@ -100,8 +100,8 @@ class EmpleadoDAO:
             """, (correo,))
             fila = cursor.fetchone()
             return EmpleadoDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar empleado: {e}")
+        except Exception:
+            print("Error al buscar empleado")
             return None
         finally:
             conn.close()
@@ -122,9 +122,9 @@ class EmpleadoDAO:
                   id_depto, empleado.id_empleado))
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar empleado: {e}")
+            print("Error al actualizar empleado")
             return False
         finally:
             conn.close()
@@ -137,9 +137,9 @@ class EmpleadoDAO:
             cursor.execute("DELETE FROM empleado WHERE id_empleado = ?", (id_empleado,))
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar empleado: {e}")
+            print("Error al eliminar empleado")
             return False
         finally:
             conn.close()

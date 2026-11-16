@@ -14,9 +14,9 @@ class ProyectoDAO:
             conn.commit()
             proyecto.id_proyecto = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al crear proyecto: {e}")
+            print("Error al crear proyecto")
             return False
         finally:
             conn.close()
@@ -37,8 +37,8 @@ class ProyectoDAO:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM proyecto")
             return [ProyectoDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al obtener proyectos: {e}")
+        except Exception:
+            print("Error al obtener proyectos")
             return []
         finally:
             conn.close()
@@ -54,8 +54,8 @@ class ProyectoDAO:
             )
             fila = cursor.fetchone()
             return ProyectoDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar proyecto: {e}")
+        except Exception:
+            print("Error al buscar proyecto")
             return None
         finally:
             conn.close()
@@ -71,9 +71,9 @@ class ProyectoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar proyecto: {e}")
+            print("Error al actualizar proyecto")
             return False
         finally:
             conn.close()
@@ -89,9 +89,9 @@ class ProyectoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar proyecto: {e}")
+            print("Error al eliminar proyecto")
             return False
         finally:
             conn.close()
@@ -107,9 +107,9 @@ class ProyectoDAO:
             )
             conn.commit()
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al asignar empleado al proyecto: {e}")
+            print("Error al asignar empleado al proyecto")
             return False
         finally:
             conn.close()
@@ -125,9 +125,9 @@ class ProyectoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al quitar empleado del proyecto: {e}")
+            print("Error al quitar empleado del proyecto")
             return False
         finally:
             conn.close()
@@ -145,8 +145,8 @@ class ProyectoDAO:
                 WHERE ep.id_proyecto = ?
             """, (id_proyecto,))
             return cursor.fetchall()
-        except Exception as e:
-            print(f"Error al consultar empleados del proyecto: {e}")
+        except Exception:
+            print("Error al consultar empleados del proyecto")
             return []
         finally:
             conn.close()
@@ -164,8 +164,8 @@ class ProyectoDAO:
                 WHERE ep.id_empleado = ?
             """, (id_empleado,))
             return [ProyectoDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al consultar proyectos del empleado: {e}")
+        except Exception:
+            print("Error al consultar proyectos del empleado")
             return []
         finally:
             conn.close()

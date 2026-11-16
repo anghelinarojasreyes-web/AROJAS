@@ -14,9 +14,9 @@ class DepartamentoDAO:
             conn.commit()
             departamento.id_departamento = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al crear departamento: {e}")
+            print("Error al crear departamento")
             return False
         finally:
             conn.close()
@@ -36,8 +36,8 @@ class DepartamentoDAO:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM departamento")
             return [DepartamentoDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al obtener departamentos: {e}")
+        except Exception:
+            print("Error al obtener departamentos")
             return []
         finally:
             conn.close()
@@ -53,8 +53,8 @@ class DepartamentoDAO:
             )
             fila = cursor.fetchone()
             return DepartamentoDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar departamento: {e}")
+        except Exception:
+            print("Error al buscar departamento")
             return None
         finally:
             conn.close()
@@ -70,9 +70,9 @@ class DepartamentoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar departamento: {e}")
+            print("Error al actualizar departamento")
             return False
         finally:
             conn.close()
@@ -88,9 +88,9 @@ class DepartamentoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar departamento: {e}")
+            print("Error al eliminar departamento")
             return False
         finally:
             conn.close()

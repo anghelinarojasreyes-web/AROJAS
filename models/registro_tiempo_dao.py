@@ -20,9 +20,9 @@ class RegistroTiempoDAO:
             conn.commit()
             registro.id_registro = cursor.lastrowid
             return True
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al crear registro: {e}")
+            print("Error al crear registro")
             return False
         finally:
             conn.close()
@@ -69,8 +69,8 @@ class RegistroTiempoDAO:
             cursor = conn.cursor()
             cursor.execute(RegistroTiempoDAO.consulta_registros())
             return [RegistroTiempoDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al obtener registros: {e}")
+        except Exception:
+            print("Error al obtener registros")
             return []
         finally:
             conn.close()
@@ -103,8 +103,8 @@ class RegistroTiempoDAO:
             )
             fila = cursor.fetchone()
             return RegistroTiempoDAO.convertir(fila) if fila else None
-        except Exception as e:
-            print(f"Error al buscar registro: {e}")
+        except Exception:
+            print("Error al buscar registro")
             return None
         finally:
             conn.close()
@@ -124,9 +124,9 @@ class RegistroTiempoDAO:
                   registro.proyecto.id_proyecto, registro.id_registro))
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al actualizar registro: {e}")
+            print("Error al actualizar registro")
             return False
         finally:
             conn.close()
@@ -142,9 +142,9 @@ class RegistroTiempoDAO:
             )
             conn.commit()
             return cursor.rowcount > 0
-        except Exception as e:
+        except Exception:
             conn.rollback()
-            print(f"Error al eliminar registro: {e}")
+            print("Error al eliminar registro")
             return False
         finally:
             conn.close()
@@ -159,8 +159,8 @@ class RegistroTiempoDAO:
                 (id_empleado,)
             )
             return [RegistroTiempoDAO.convertir(fila) for fila in cursor.fetchall()]
-        except Exception as e:
-            print(f"Error al consultar registros: {e}")
+        except Exception:
+            print("Error al consultar registros")
             return []
         finally:
             conn.close()
