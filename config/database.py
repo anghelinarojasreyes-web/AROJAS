@@ -81,6 +81,32 @@ class Database:
             if "contrasena" not in columnas:
                 cursor.execute("ALTER TABLE empleado ADD COLUMN contrasena TEXT")
 
+            # Impedir correos repetidos dentro de cada tabla y entre roles.
+            tablas = ("administrador", "gerente", "empleado")
+            for tabla in tablas:
+                cursor.execute(f"""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_{tabla}_correo_unico
+                    ON {tabla}(LOWER(TRIM(correo)))
+                """)
+
+            for tabla in tablas:
+                otras = [otra for otra in tablas if otra != tabla]
+                for accion in ("INSERT", "UPDATE OF correo"):
+                    sufijo = "insertar" if accion == "INSERT" else "actualizar"
+                    condiciones = " OR ".join(
+                        f"EXISTS (SELECT 1 FROM {otra} "
+                        f"WHERE LOWER(TRIM(correo)) = LOWER(TRIM(NEW.correo)))"
+                        for otra in otras
+                    )
+                    cursor.execute(f"""
+                        CREATE TRIGGER IF NOT EXISTS trg_{tabla}_{sufijo}_correo
+                        BEFORE {accion} ON {tabla}
+                        WHEN {condiciones}
+                        BEGIN
+                            SELECT RAISE(ABORT, 'Correo ya registrado');
+                        END
+                    """)
+
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()
